@@ -4,6 +4,11 @@ import { PrismaService } from 'src/prisma.service';
 import { hash, compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserPayload } from './jwt.strategy';
+import {
+  UserAlreadyExistsException,
+  UserNotFoundException,
+  InvalidPasswordException,
+} from './auth.exceptions';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +24,7 @@ export class AuthService {
     });
 
     if (!existingUser) {
-      throw new Error('User not found');
+      throw new UserNotFoundException();
     }
 
     const isPasswordValid = await this.isPasswordValid({
@@ -28,11 +33,10 @@ export class AuthService {
     });
 
     if (!isPasswordValid) {
-      throw new Error('Invalid password');
+      throw new InvalidPasswordException();
     }
 
     return this.authenticateUser({ userId: existingUser.id });
-    // const hashedPassword = await this.hashPassword({ password });
   }
 
   async register({ registerBody }: { registerBody: CreateUser }) {
@@ -42,7 +46,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new UserAlreadyExistsException();
     }
 
     const hashedPassword = await this.hashPassword({ password });
